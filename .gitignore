@@ -1,0 +1,17 @@
+# Ignore Backend/Data directory
+Backend/Data/
+
+# Ignore Backend/Test_results directory
+Backend/Test_results/
+
+# Ignore other common files and folders (optional examples)
+*.log
+*.env
+__pycache__/
+*.pyc
+.DS_Store
+
+Backend/index/
+
+
+ai
