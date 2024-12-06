@@ -1,14 +1,24 @@
 import numpy as np
-from services.query.query_expansion_service import expand_query  # Keep for short query expansion
-from services.embedding.embedding_service import embed_query         # Keep for embedding the query
-from services.response.reranking_service import rerank_with_model   # Keep for reranking the documents
-from sklearn.metrics.pairwise import cosine_similarity     # Keep for similarity calculations
-
+from services.query.query_expansion_service import expand_query
+from services.embedding.embedding_service import embed_query
+from services.response.reranking_service import rerank_with_model
+from sklearn.metrics.pairwise import cosine_similarity
 
 def retrieve_documents(index, query_embedding, documents, user_query=None, k=10, nprobe=20):
     """
     Retrieve the top k relevant documents based on embedding similarity,
     then refine relevance through reranking using the CrossEncoder model.
+
+    Args:
+        index (faiss.Index): The FAISS index object.
+        query_embedding (np.ndarray): The embedding vector of the query.
+        documents (list): List of document tuples containing metadata and text.
+        user_query (str): The original user query text.
+        k (int): The number of top documents to retrieve.
+        nprobe (int): The number of clusters to probe for initial retrieval.
+
+    Returns:
+        list: List of retrieved and reranked document tuples.
     """
     index.nprobe = nprobe  # Increase nprobe to broaden initial retrieval
 
@@ -32,8 +42,8 @@ def retrieve_documents(index, query_embedding, documents, user_query=None, k=10,
     initial_sim = 0
     if initial_docs:
         initial_sim = np.mean([
-            cosine_similarity(query_embedding, [doc[2]])[0][0]
-            for doc in initial_docs if len(doc) > 2
+            cosine_similarity(query_embedding, [doc[1]])[0][0]
+            for doc in initial_docs if len(doc) > 1
         ])
 
     # Set weights based on the initial similarity threshold
@@ -50,10 +60,23 @@ def retrieve_documents(index, query_embedding, documents, user_query=None, k=10,
 
     # Step 1: Perform the initial retrieval from FAISS with larger k for more coverage
     _, indices = index.search(combined_embedding, k)
-    initial_retrieved_docs = [documents[i] for i in indices[0] if 0 <= i < len(documents)]
+    indices = indices.flatten()  # Flatten indices for easier access
 
-    # Step 2: Apply reranking using the CrossEncoder model, focusing on top candidates
-    if user_query and initial_retrieved_docs:
-        return rerank_with_model(initial_retrieved_docs[:5], user_query)  # Limit reranking to top 5
+    # Step 2: Retrieve documents corresponding to the indices
+    retrieved_docs = []
+    for idx in indices:
+        if 0 <= idx < len(documents):
+            retrieved_docs.append(documents[idx])
+        else:
+            print(f"Warning: Index {idx} is out of range for documents list of length {len(documents)}.")
+
+    if not retrieved_docs:
+        print("No valid document indices found after initial retrieval.")
+        return []
+
+    # Step 3: Apply reranking using the CrossEncoder model, focusing on top candidates
+    if user_query and retrieved_docs:
+        reranked_docs = rerank_with_model(retrieved_docs[:5], user_query)  # Limit reranking to top 5
+        return reranked_docs
     else:
-        return initial_retrieved_docs
+        return retrieved_docs

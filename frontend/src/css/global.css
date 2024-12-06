@@ -96,3 +96,33 @@
 .markdown-content li {
   margin-bottom: 0.5em; /* Space between list items */
 }
+
+@keyframes subtle-slide-in-right {
+  0% {
+    transform: translateX(20%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes subtle-slide-in-left {
+  0% {
+    transform: translateX(-20%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-subtle-slide-in-right {
+  animation: subtle-slide-in-right 0.4s ease-in-out;
+}
+
+.animate-subtle-slide-in-left {
+  animation: subtle-slide-in-left 0.4s ease-in-out;
+}

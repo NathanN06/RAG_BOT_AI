@@ -20,7 +20,7 @@ def index_embeddings(embeddings, index_type='IVFPQ'):
     num_data_points = embeddings.shape[0]
 
     # Determine the appropriate index based on the size of the dataset
-    if num_data_points < 100:
+    if num_data_points < 256:
         print(f"Dataset is small ({num_data_points} data points). Using IndexFlatL2.")
         index = faiss.IndexFlatL2(dimension)
     elif index_type == 'IVFPQ':
